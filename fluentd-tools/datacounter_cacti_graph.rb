@@ -1,8 +1,14 @@
 #!/usr/local/rvm/rubies/ruby-1.9.3-p125/bin/ruby
 #
-#example: ./check_fluentd.rb -p /var/log/td-agent/ -f access_log -h 127.0.0.1 -c 600 -w 180
+#example: ./datacounter_cacti_graph.rb -p /var/log/td-agent/ -f counter -s count
 #
-#該当ログファイルを読んでいって、閾値を超えるまでに-sオプションで指定した文字列が出現するかどうかで監視します
+#datacounterプラグインで出力された値をCacti用に項目ごとに整形・出力します。
+
+#example:Log
+#2012-02-29T18:50:44+09:00       result  {"apache.access_unmatched_count":0,"apache.access_unmatched_rate":0.0,"apache.access_2xx_count":0,"apache.access_2xx_rate":0.0,"apache.access_3xx_count":0,"apache.access_3xx_rate":0.0,"apache.access_4xx_count":0,"apache.access_4xx_rate":0.0,"apache.access_5xx_count":0,"apache.access_5xx_rate":0.0}
+
+#example:print out
+#apache.access_unmatched_count:0 apache.access_2xx_count:0       apache.access_3xx_count:0       apache.access_4xx_count:0       apache.access_5xx_count:0
 
 require 'optparse'
 require 'time'
@@ -11,12 +17,13 @@ require 'json'
 opt = OptionParser.new
 opts = Hash.new
 
-opt.on('-p VAL' " Nagios check log file path") {|v| opts["log_path"] = v}
-opt.on('-f VAL' " Nagios check log file name") {|v| opts["file_name"] = v}
+opt.on('-p VAL' " cacti check log file path") {|v| opts["log_path"] = v}
+opt.on('-f VAL' " cacti check log file name") {|v| opts["file_name"] = v}
+opt.on('-s VAL' " cacti check string")        {|v| opts["string"] = v}
 
 opt.parse!(ARGV)
 
-column_array = ["count","rate","percentage"]
+#column_array = ["count","rate","percentage"]
 
 def get_new_logfile(path,logfile)
     cmd = "find #{path} -name \"#{logfile}*\"| xargs ls -t| head -n 1"
@@ -52,10 +59,10 @@ def json_to_hash(json)
     return hash
 end
 
-def get_hash_key_array(hash,column)
-    array = hash.keys
+def get_hash_key_array(data_hash,column_array)
+    array = data_hash.keys
     key_array = []
-    column.each do |col|
+    column_array.each do |col|
         key_array << array.select{|elem| elem =~ /#{col}/}
     end
     return key_array
@@ -76,8 +83,9 @@ end
 begin
     opts["log_file"] = get_new_logfile(opts["log_path"],opts["file_name"])
     data_hash = tac_to_hash(opts)
+    column_array = [opts["string"]]
     key_array = get_hash_key_array(data_hash,column_array)
     print_value(data_hash,key_array)
-rescue
-    print "ERROR!!!!"
+rescue => er
+    print "ERROR!!!! #{er}\n"
 end
