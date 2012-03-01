@@ -1,5 +1,5 @@
 #!/usr/local/rvm/rubies/ruby-1.9.3-p125/bin/ruby
-#
+#単一の値を取得する時は
 #example: ./datacounter_cacti_graph.rb -p /var/log/td-agent/ -f counter -s count
 #
 #datacounterプラグインで出力された値をCacti用に項目ごとに整形・出力します。
@@ -74,9 +74,8 @@ def print_value(hash,key_array)
             next
         end
         key.each do |k|
-            print "#{k}:#{hash[k]}\t"
+            print "#{k}:#{hash[k]} "
         end
-        print "\n"
     end
 end
 
