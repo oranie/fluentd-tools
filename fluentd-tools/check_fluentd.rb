@@ -1,6 +1,6 @@
 #!/usr/local/rvm/rubies/ruby-1.9.3-p125/bin/ruby 
 #
-#example: ./check_fluentd.rb -p /var/log/td-agent/ -f access_log -h 127.0.0.1 -c 600 -w 180
+#example: ./check_fluentd.rb -p /var/log/td-agent/ -f access_log -s 127.0.0.1 -c 600 -w 180
 #
 #該当ログファイルを読んでいって、閾値を超えるまでに-sオプションで指定した文字列が出現するかどうかで監視します
 
@@ -12,7 +12,7 @@ opts = Hash.new
 
 opt.on('-p VAL' " Nagios check log file path") {|v| opts["log_path"] = v}
 opt.on('-f VAL' " Nagios check log file name") {|v| opts["file_name"] = v}
-opt.on('-s VAL' " Check check string ") {|v| opts["str"] = v}
+opt.on('-s VAL' " Check string ") {|v| opts["str"] = v}
 opt.on('-c VAL' " Check the time difference, or more if critical threshold (sec)") {|v| opts["critical"] = v}
 opt.on('-w VAL' " Check the time difference, or more if warnings threshold (sec)") {|v| opts["warnings"] = v}
 
