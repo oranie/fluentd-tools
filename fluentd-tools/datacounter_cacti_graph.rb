@@ -1,4 +1,4 @@
-#!/usr/local/rvm/rubies/ruby-1.9.3-p125/bin/ruby
+#!/usr/lib64/fluent/ruby/bin/ruby
 #単一の値を取得する時は
 #example: ./datacounter_cacti_graph.rb -p /var/log/td-agent/ -f counter -s count
 #
@@ -20,6 +20,7 @@ opts = Hash.new
 opt.on('-p VAL' " cacti check log file path") {|v| opts["log_path"] = v}
 opt.on('-f VAL' " cacti check log file name") {|v| opts["file_name"] = v}
 opt.on('-s VAL' " cacti check string")        {|v| opts["string"] = v}
+opt.on('-t VAL' " cacti check tag string")    {|v| opts["tag"] = v}
 
 opt.parse!(ARGV)
 
@@ -37,12 +38,17 @@ end
 def tac_to_hash(opts)
     log_file  = opts["log_file"]
     check_str = opts["str"]
+    check_tag = opts["tag"]
 
     open("|tac #{log_file}") do |fp|
         while line = fp.gets
             line_ary = log_line_parse(line)
-            record_hash = json_to_hash(line_ary[2])
-            return record_hash
+            if /#{check_tag}/ =~ line_ary[1]
+                record_hash = json_to_hash(line_ary[2])
+                return record_hash
+            else
+                next
+            end
         end
     end
 end
@@ -70,21 +76,30 @@ end
 
 def print_value(hash,key_array)
     key_array.each do |key|
-        if key.nil? || key.empty?  
+        if key.nil? || key.empty?
             next
         end
+        a = []
         key.each do |k|
-            print "#{k}:#{hash[k]} "
+            key_st = "#{k}"
+            val = key_st.sub(/apache./,"") + ":#{hash[k]}"
+            #key_st.sub(/apache./)
+            a.push(val)
         end
+        print a.join(' ')
     end
 end
 
 begin
     opts["log_file"] = get_new_logfile(opts["log_path"],opts["file_name"])
     data_hash = tac_to_hash(opts)
+    if data_hash.nil? then
+        print "no data\n"
+    end
     column_array = [opts["string"]]
     key_array = get_hash_key_array(data_hash,column_array)
     print_value(data_hash,key_array)
 rescue => er
     print "ERROR!!!! #{er}\n"
 end
+
